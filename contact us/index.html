@@ -274,3 +274,22 @@ document.getElementById("contactForm").addEventListener("submit", function(e){
 </script>
 </body>
 </html>
+<!-- Include EmailJS -->
+<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script>
+  (function(){
+    emailjs.init('GVWVX6WICNlukZ_56'); // replace with your EmailJS user ID
+  })();
+
+  document.getElementById("contactForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    emailjs.sendForm('service_qios65r', 'template_36lc0dk', this)
+      .then(function() {
+        alert("Your spooky message has been sent!");
+        document.getElementById("contactForm").reset();
+      }, function(error) {
+        alert("Oops... something went wrong. " + JSON.stringify(error));
+      });
+  });
+</script>
