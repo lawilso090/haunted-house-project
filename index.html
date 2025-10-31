@@ -10,9 +10,9 @@
   body, html {
     margin: 0;
     padding: 0;
-    height: 100%;
+    min-height: 100vh;
     background: radial-gradient(circle at center, #050000 0%, #000 100%);
-    overflow: hidden;
+    overflow-y: auto; /* allow scrolling on iPad */
     font-family: 'Creepster', cursive;
     color: #fff;
     cursor: none; /* hide default cursor */
@@ -25,6 +25,7 @@
     z-index: 0;
     width: 100%;
     height: 100%;
+    pointer-events: none; /* don’t block scrolling/touch */
   }
 
   .content {
@@ -33,7 +34,7 @@
     max-width: 800px;
     margin: auto;
     text-align: center;
-    padding: 20px;
+    padding: 40px 20px 80px 20px;
   }
 
   h1 {
@@ -135,62 +136,67 @@ class Particle {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-    ctx.fillStyle = rgba(255,0,0,${this.life/150});
+    ctx.fillStyle = `rgba(255,0,0,${this.life/150})`;
     ctx.fill();
   }
 }
 
-// create static wireframe particles
-for (let i = 0; i < 60; i++) {
+// Create background red wireframe particles
+for (let i = 0; i < 120; i++) {
   particles.push(new Particle(
     Math.random() * canvas.width,
     Math.random() * canvas.height,
-    (Math.random() - 0.5) * 0.5,
-    (Math.random() - 0.5) * 0.5,
-    2
+    (Math.random() - 0.5) * 0.3,
+    (Math.random() - 0.5) * 0.3,
+    1.5
   ));
 }
 
 window.addEventListener("mousemove", e => {
-  mouse.x = e.x;
-  mouse.y = e.y;
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
 
-  // add blood droplets
-  particles.push(new Particle(e.x, e.y, (Math.random()-0.5)*1, (Math.random()-0.5)*1, 3, true));
+  // Add blood droplets when moving
+  for (let i = 0; i < 2; i++) {
+    particles.push(new Particle(
+      e.clientX, e.clientY,
+      (Math.random()-0.5)*1,
+      (Math.random()-0.5)*1,
+      3, true
+    ));
+  }
 });
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // draw particles
+  // Draw wireframe connections
   for (let i = 0; i < particles.length; i++) {
     let p = particles[i];
     p.update();
     p.draw();
+
+    for (let j = i+1; j < particles.length; j++) {
+      let p2 = particles[j];
+      let dx = p.x - p2.x, dy = p.y - p2.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 100) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.strokeStyle = `rgba(255,0,0,${1 - dist/100})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+
     if (p.life <= 0) {
       particles.splice(i,1);
       i--;
     }
   }
 
-  // connect lines
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i+1; j < particles.length; j++) {
-      let p1 = particles[i], p2 = particles[j];
-      let dx = p1.x - p2.x, dy = p1.y - p2.y;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 120) {
-        ctx.beginPath();
-        ctx.moveTo(p1.x,p1.y);
-        ctx.lineTo(p2.x,p2.y);
-        ctx.strokeStyle = rgba(255,0,0,${1 - dist/120});
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-    }
-  }
-
-  // draw red cursor aura
+  // Draw glowing red cursor
   if (mouse.x && mouse.y) {
     ctx.beginPath();
     ctx.arc(mouse.x, mouse.y, 10, 0, Math.PI*2);
